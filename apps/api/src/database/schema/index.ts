@@ -1,9 +1,8 @@
 import {
-    index,
     pgEnum,
     pgTable,
     timestamp,
-    uniqueIndex,
+    unique,
     uuid,
     varchar,
 } from 'drizzle-orm/pg-core';
@@ -40,7 +39,7 @@ export const tenants = pgTable(
             .defaultNow(),
     },
     (table) => [
-        uniqueIndex('tenants_slug_unique').on(table.slug),
+        unique('tenants_slug_unique').on(table.slug),
     ],
 );
 
@@ -68,10 +67,9 @@ export const users = pgTable(
             .defaultNow(),
     },
     (table) => [
-        uniqueIndex('users_tenant_email_unique').on(
+        unique('users_tenant_email_unique').on(
             table.tenantId,
             table.email,
         ),
-        index('users_tenant_id_idx').on(table.tenantId),
     ],
 );
