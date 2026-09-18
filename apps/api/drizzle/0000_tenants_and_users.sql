@@ -10,7 +10,8 @@ CREATE TABLE "tenants" (
     "slug" varchar(80) NOT NULL,
     "status" "tenant_status" DEFAULT 'active' NOT NULL,
     "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "tenants_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -24,7 +25,8 @@ CREATE TABLE "users" (
     "status" "user_status" DEFAULT 'active' NOT NULL,
     "email_verified_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "users_tenant_email_unique" UNIQUE("tenant_id", "email")
 );
 --> statement-breakpoint
 ALTER TABLE "users"
@@ -33,9 +35,3 @@ ALTER TABLE "users"
     REFERENCES "public"."tenants"("id")
     ON DELETE cascade
     ON UPDATE no action;
---> statement-breakpoint
-CREATE UNIQUE INDEX "tenants_slug_unique" ON "tenants" USING btree ("slug");
---> statement-breakpoint
-CREATE UNIQUE INDEX "users_tenant_email_unique" ON "users" USING btree ("tenant_id","email");
---> statement-breakpoint
-CREATE INDEX "users_tenant_id_idx" ON "users" USING btree ("tenant_id");
