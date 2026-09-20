@@ -4,7 +4,12 @@ import { DatabaseService } from './database.service.js';
 
 @Global()
 @Module({
-    providers: [DatabaseService],
+    providers: [
+        {
+            provide: DatabaseService,
+            useFactory: () => DatabaseService.getInstance(),
+        },
+    ],
     exports: [DatabaseService],
 })
 export class DatabaseModule {}
