@@ -6,6 +6,9 @@
     "scripts": {
         "dev:web": "pnpm --filter web dev",
         "dev:api": "pnpm --filter api start:dev",
+        "db:up": "docker compose -f infrastructure/docker-compose.yml up -d --wait postgres pgadmin",
+        "db:down": "docker compose -f infrastructure/docker-compose.yml down",
+        "db:migrate": "pnpm --filter api db:migrate",
         "build": "pnpm -r build",
         "lint": "pnpm -r lint",
         "test": "pnpm -r test"

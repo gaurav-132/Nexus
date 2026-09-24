@@ -52,3 +52,7 @@ jest-cache/
 # Archives / misc
 *.tgz
 *.zip
+
+
+AGENTS.md
+apps/web/CLAUDE.md

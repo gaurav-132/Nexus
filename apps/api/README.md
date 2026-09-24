@@ -1,114 +1,40 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Nexus API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The API is a NestJS modular monolith with a single V1 module root. The global route prefix is `/api/v1`. V1 endpoints follow controller → service → repository: controllers handle HTTP, services implement use cases, and repositories own database reads and transactions. Shared API response and error handling are in `src/common/api-response/`.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Authentication uses `users` as the source of identity and credentials. User role and tenant association come from that record. The auth repository stores random session tokens as hashes in PostgreSQL and resolves the user and tenant on each authenticated request.
 
-## Description
+The API is organized by feature first: `modules/v1/auth/` contains files that belong to the authentication feature, rather than scattering one feature across global controller/service/repository directories. Inside that feature, each file has a focused role:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- `auth.controller.ts` — HTTP routes, cookie handling, and request-boundary validation.
+- `auth.service.ts` — signup/login business flow and safe public identity mapping.
+- `auth.repository.ts` — Drizzle queries and the atomic tenant, owner, and session signup transaction.
+- `auth-input.schema.ts` — Zod request schemas.
+- `auth-context.ts` — authenticated request type, guard, and current-user decorator.
+- `auth-security.ts` — password hashing and opaque session-token utilities.
+- `auth.module.ts` — NestJS dependency wiring for the feature.
+- `auth.service.spec.ts` — focused service behavior tests.
 
-## Project setup
+The auth feature is the module boundary. MVC stays inside that module: its controller, service, and repository are files beside the feature's validation, guard, and security code. The database schema is split by domain under `database/schema/`, with `index.ts` as the Drizzle export barrel. There is no separate tenant API module: signup creates the tenant as part of the same atomic auth operation, so a sibling tenants module would currently have no tenant-management behavior to own.
+
+See the [root README](../../README.md) for the whole application architecture, local PostgreSQL setup, endpoint contract, migration workflow, and the difference between the Drizzle schema and SQL migrations.
+
+From the repository root:
 
 ```bash
-$ pnpm install
+pnpm db:up
+pnpm db:migrate
+pnpm dev:api
 ```
 
-## Compile and run the project
+Run `pnpm --filter api test:e2e` with the database running and migrated to exercise signup, login, current-user lookup, logout, validation, and password hashing through the HTTP layer. The e2e test deletes its temporary tenant after it completes.
+
+Other database commands are `pnpm --filter api db:generate <module> [Drizzle Kit options]` and `pnpm --filter api db:check`. For example:
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm --filter api db:generate auth --name=auth_sessions_index
 ```
 
-## Run tests
+The API reads the root `.env`, verifies database connectivity during startup, and closes its pool during graceful shutdown.
 
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Keep migrations in separate SQL files grouped under the owning module, for example `drizzle/tenants/` and `drizzle/auth/`. `scripts/generate-migration.mjs` runs Drizzle Kit, places the generated SQL in the requested module folder, and records that path in the journal. Drizzle Kit v0.31 reads these nested paths from one shared `meta/_journal.json`; its global index preserves the correct order when one module's tables reference another module's tables. The existing applied migrations were moved without changing their SQL. The schema source is split by domain, while migration SQL is split by owning module.
