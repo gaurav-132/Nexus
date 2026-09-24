@@ -1,6 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 
 const DEFAULT_WEB_ORIGIN = 'http://localhost:3000';
+const DEVELOPMENT_LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 
 /**
  * Returns the explicitly configured browser origins used by both CORS and
@@ -33,6 +34,19 @@ export function getAllowedWebOrigins(config: ConfigService): string[] {
         }
 
         origins.add(url.origin);
+    }
+
+    if (config.get<string>('NODE_ENV') === 'development') {
+        for (const origin of [...origins]) {
+            const url = new URL(origin);
+            if (!DEVELOPMENT_LOOPBACK_HOSTS.includes(url.hostname)) continue;
+
+            for (const hostname of DEVELOPMENT_LOOPBACK_HOSTS) {
+                const localAlias = new URL(origin);
+                localAlias.hostname = hostname;
+                origins.add(localAlias.origin);
+            }
+        }
     }
 
     return [...origins];

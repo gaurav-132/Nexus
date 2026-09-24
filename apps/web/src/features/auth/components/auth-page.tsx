@@ -7,7 +7,7 @@ export function AuthPage({ mode }: { mode: "login" | "signup" }) {
     return (
         <div className="site-frame auth-page">
             <SiteHeader compact />
-            <main className="auth-main wrap">
+            <main className="auth-main wrap justify-between">
                 <section className="auth-panel">
                     <div className="auth-heading">
                         <span className="eyebrow">

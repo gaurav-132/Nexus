@@ -2,13 +2,13 @@
 
 The API is a NestJS modular monolith with a single V1 module root. The global route prefix is `/api/v1`. V1 endpoints follow controller → service → repository: controllers handle HTTP, services implement use cases, and repositories own database reads and transactions. Shared API response and error handling are in `src/common/api-response/`.
 
-Authentication uses `users` as the source of identity and credentials. User role and tenant association come from that record. The auth repository stores random session tokens as hashes in PostgreSQL and resolves the user and tenant on each authenticated request.
+Authentication uses `users` as the source of identity and credentials, with globally unique normalized emails. `memberships` connect that identity to workspaces and hold workspace roles. `invitations` grant memberships, while `sessions` store only a hash of the random cookie token and track the active membership. The auth repository resolves the user and memberships on authenticated requests.
 
 The API is organized by feature first: `modules/v1/auth/` contains files that belong to the authentication feature, rather than scattering one feature across global controller/service/repository directories. Inside that feature, each file has a focused role:
 
 - `auth.controller.ts` — HTTP routes, cookie handling, and request-boundary validation.
 - `auth.service.ts` — signup/login business flow and safe public identity mapping.
-- `auth.repository.ts` — Drizzle queries and the atomic tenant, owner, and session signup transaction.
+- `auth.repository.ts` — Drizzle queries and transactions for signup, login sessions, workspace selection, and invitation acceptance.
 - `auth-input.schema.ts` — Zod request schemas.
 - `auth-context.ts` — authenticated request type, guard, and current-user decorator.
 - `auth-security.ts` — password hashing and opaque session-token utilities.
@@ -37,4 +37,4 @@ pnpm --filter api db:generate auth --name=auth_sessions_index
 
 The API reads the root `.env`, verifies database connectivity during startup, and closes its pool during graceful shutdown.
 
-Keep migrations in separate SQL files grouped under the owning module, for example `drizzle/tenants/` and `drizzle/auth/`. `scripts/generate-migration.mjs` runs Drizzle Kit, places the generated SQL in the requested module folder, and records that path in the journal. Drizzle Kit v0.31 reads these nested paths from one shared `meta/_journal.json`; its global index preserves the correct order when one module's tables reference another module's tables. The existing applied migrations were moved without changing their SQL. The schema source is split by domain, while migration SQL is split by owning module.
+Keep migrations in separate SQL files grouped under the owning module, for example `drizzle/tenants/` and `drizzle/auth/`. `scripts/generate-migration.mjs` runs Drizzle Kit, places the generated SQL in the requested module folder, and records that path in the journal. Drizzle Kit v0.31 reads these nested paths from one shared `meta/_journal.json`; its global index preserves the correct order when one module's tables reference another module's tables. The identity normalization migration stops before changing data if it finds duplicate case-insensitive emails, which must be consolidated manually first. The schema source is split by domain, while migration SQL is split by owning module.

@@ -12,8 +12,13 @@ import { SESSION_COOKIE_NAME } from './auth-security.js';
 export interface AuthenticatedUser {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string | null;
+    name: string;
+    memberships: AuthenticatedMembership[];
+    activeMembership: AuthenticatedMembership | null;
+}
+
+export interface AuthenticatedMembership {
+    id: string;
     role: 'owner' | 'admin' | 'member';
     tenant: { id: string; name: string; slug: string };
 }

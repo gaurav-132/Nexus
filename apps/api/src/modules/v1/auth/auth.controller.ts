@@ -4,6 +4,7 @@ import {
     ForbiddenException,
     Get,
     HttpCode,
+    Param,
     Post,
     Req,
     Res,
@@ -24,7 +25,12 @@ import {
 } from './auth-context.js';
 import { SESSION_COOKIE_NAME, SESSION_DURATION_MS } from './auth-security.js';
 import { AuthService } from './auth.service.js';
-import { loginSchema, registerSchema } from './auth-input.schema.js';
+import {
+    acceptInvitationSchema,
+    loginSchema,
+    registerSchema,
+    selectWorkspaceSchema,
+} from './auth-input.schema.js';
 
 @Controller('auth')
 export class AuthController {
@@ -73,10 +79,54 @@ export class AuthController {
         return result.user;
     }
 
+    @Post('invitations/:token/accept')
+    @HttpCode(200)
+    async acceptInvitation(
+        @Param('token') token: string,
+        @Req() request: Request,
+        @Res({ passthrough: true }) response: Response,
+    ) {
+        this.assertAllowedOrigin(request);
+        const input = acceptInvitationSchema.safeParse(request.body ?? {});
+        if (!input.success) {
+            throw new BadRequestException({
+                message: 'Please check the highlighted fields.',
+                details: input.error.flatten().fieldErrors,
+            });
+        }
+
+        const result = await this.authService.acceptInvitation(
+            token,
+            input.data,
+        );
+        this.setSessionCookie(response, result.token);
+        return result.user;
+    }
+
     @Get('me')
     @UseGuards(AuthGuard)
     currentUser(@CurrentUser() user: AuthenticatedUser) {
         return user;
+    }
+
+    @Post('select-workspace')
+    @HttpCode(200)
+    @UseGuards(AuthGuard)
+    async selectWorkspace(@Req() request: Request) {
+        this.assertAllowedOrigin(request);
+        const input = selectWorkspaceSchema.safeParse(request.body);
+        if (!input.success) {
+            throw new BadRequestException({
+                message: 'Please provide a valid workspace.',
+                details: input.error.flatten().fieldErrors,
+            });
+        }
+
+        await this.authService.selectWorkspace(
+            sessionTokenFromRequest(request),
+            input.data.tenantSlug,
+        );
+        return { workspaceSelected: true };
     }
 
     @Post('logout')

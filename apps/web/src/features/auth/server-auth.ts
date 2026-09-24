@@ -1,23 +1,31 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+
+export interface CurrentMembership {
+    id: string;
+    role: string;
+    tenant: { id: string; name: string; slug: string };
+}
 
 export interface CurrentUser {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string | null;
-    role: string;
-    tenant: { id: string; name: string; slug: string };
+    name: string;
+    memberships: CurrentMembership[];
+    activeMembership: CurrentMembership | null;
 }
+
+export type WorkspaceUser = Omit<CurrentUser, "activeMembership"> & {
+    activeMembership: CurrentMembership;
+};
 
 interface AuthEnvelope {
     success: boolean;
     data?: CurrentUser;
 }
 
-export async function requireCurrentUser(): Promise<CurrentUser> {
+export async function getCurrentUser(): Promise<CurrentUser | null> {
     const sessionToken = (await cookies()).get("nexus_session")?.value;
-    if (!sessionToken) redirect("/login");
+    if (!sessionToken) return null;
 
     const apiOrigin = process.env.API_SERVER_URL ?? "http://localhost:3001";
     try {
@@ -25,13 +33,11 @@ export async function requireCurrentUser(): Promise<CurrentUser> {
             headers: { Cookie: `nexus_session=${sessionToken}` },
             cache: "no-store",
         });
-        if (!response.ok) redirect("/login");
+        if (!response.ok) return null;
+
         const result = (await response.json()) as AuthEnvelope;
-        if (!result.success || !result.data) redirect("/login");
-        return result.data;
-    } catch (error) {
-        if (error && typeof error === "object" && "digest" in error)
-            throw error;
-        redirect("/login");
+        return result.success && result.data ? result.data : null;
+    } catch {
+        return null;
     }
 }

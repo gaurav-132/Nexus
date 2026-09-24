@@ -70,40 +70,21 @@ export function SignupForm() {
             <div className="form-section-label form-section-next">
                 <span>02</span> YOUR ACCOUNT
             </div>
-            <div className="form-row">
-                <AuthField
-                    id="firstName"
-                    label="First name"
-                    error={fieldErrors.firstName}
-                >
-                    <AuthInput
-                        id="firstName"
-                        className="text-input"
-                        name="firstName"
-                        autoComplete="given-name"
-                        maxLength={80}
-                        onChange={() => clearFieldError("firstName")}
-                    />
-                </AuthField>
-                <AuthField
-                    id="lastName"
-                    label={
-                        <>
-                            Last name <em>Optional</em>
-                        </>
-                    }
-                    error={fieldErrors.lastName}
-                >
-                    <AuthInput
-                        id="lastName"
-                        className="text-input"
-                        name="lastName"
-                        autoComplete="family-name"
-                        maxLength={80}
-                        onChange={() => clearFieldError("lastName")}
-                    />
-                </AuthField>
-            </div>
+            <AuthField
+                id="name"
+                label="Your name"
+                error={fieldErrors.name}
+                className="field-spaced"
+            >
+                <AuthInput
+                    id="name"
+                    className="text-input"
+                    name="name"
+                    autoComplete="name"
+                    maxLength={160}
+                    onChange={() => clearFieldError("name")}
+                />
+            </AuthField>
             <AuthField
                 id="email"
                 label="Work email"

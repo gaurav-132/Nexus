@@ -1,4 +1,6 @@
+import { sql } from 'drizzle-orm';
 import {
+    check,
     pgEnum,
     pgTable,
     timestamp,
@@ -6,10 +8,6 @@ import {
     uuid,
     varchar,
 } from 'drizzle-orm/pg-core';
-
-import { tenants } from './tenants.schema.js';
-
-export const userRoleEnum = pgEnum('user_role', ['owner', 'admin', 'member']);
 
 export const userStatusEnum = pgEnum('user_status', [
     'active',
@@ -21,14 +19,9 @@ export const users = pgTable(
     'users',
     {
         id: uuid('id').primaryKey(),
-        tenantId: uuid('tenant_id')
-            .notNull()
-            .references(() => tenants.id, { onDelete: 'cascade' }),
         email: varchar('email', { length: 320 }).notNull(),
         passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-        firstName: varchar('first_name', { length: 80 }).notNull(),
-        lastName: varchar('last_name', { length: 80 }),
-        role: userRoleEnum('role').notNull().default('member'),
+        name: varchar('name', { length: 160 }).notNull(),
         status: userStatusEnum('status').notNull().default('active'),
         emailVerifiedAt: timestamp('email_verified_at', {
             withTimezone: true,
@@ -41,6 +34,7 @@ export const users = pgTable(
             .defaultNow(),
     },
     (table) => [
-        unique('users_tenant_email_unique').on(table.tenantId, table.email),
+        unique('users_email_unique').on(table.email),
+        check('users_email_lowercase_check', sql`email = lower(email)`),
     ],
 );

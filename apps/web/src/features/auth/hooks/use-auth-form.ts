@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -8,13 +9,16 @@ import {
     validateAuthValues,
     type AuthFieldErrors,
     type AuthMode,
+    type AuthValues,
 } from "@/features/auth/validation/schemas";
 
 export function useAuthForm(mode: AuthMode) {
     const router = useRouter();
-    const [busy, setBusy] = useState(false);
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
+    const authMutation = useMutation({
+        mutationFn: (values: AuthValues) => submitAuth(mode, values),
+    });
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -32,10 +36,9 @@ export function useAuthForm(mode: AuthMode) {
             return;
         }
 
-        setBusy(true);
         try {
-            await submitAuth(mode, validation.values);
-            router.replace("/app");
+            await authMutation.mutateAsync(validation.values);
+            router.replace("/");
             router.refresh();
         } catch (error) {
             if (error instanceof AuthApiError) {
@@ -44,8 +47,6 @@ export function useAuthForm(mode: AuthMode) {
             } else {
                 setFormError("Something went wrong. Please try again.");
             }
-        } finally {
-            setBusy(false);
         }
     }
 
@@ -59,5 +60,11 @@ export function useAuthForm(mode: AuthMode) {
         setFormError("");
     }
 
-    return { busy, formError, fieldErrors, handleSubmit, clearFieldError };
+    return {
+        busy: authMutation.isPending,
+        formError,
+        fieldErrors,
+        handleSubmit,
+        clearFieldError,
+    };
 }

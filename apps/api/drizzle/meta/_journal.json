@@ -15,6 +15,13 @@
       "when": 1790229212030,
       "tag": "auth/0001_melted_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790288685261,
+      "tag": "auth/0002_normalize_identity_memberships",
+      "breakpoints": true
     }
   ]
 }

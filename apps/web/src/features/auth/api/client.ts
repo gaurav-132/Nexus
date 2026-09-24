@@ -45,21 +45,55 @@ export async function submitAuth(
     mode: "login" | "signup",
     values: AuthValues,
 ): Promise<void> {
+    const endpoint = mode === "signup" ? "register" : "login";
+    await requestAuth(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+    });
+}
+
+export async function logout(): Promise<void> {
+    const result = await requestAuth<{ signedOut: boolean }>("logout", {
+        method: "POST",
+    });
+    if (!result.signedOut) {
+        throw new AuthApiError(
+            "We couldn’t complete sign out. Please try again.",
+        );
+    }
+}
+
+export async function selectWorkspace(tenantSlug: string): Promise<void> {
+    const result = await requestAuth<{ workspaceSelected: boolean }>(
+        "select-workspace",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tenantSlug }),
+        },
+    );
+    if (!result.workspaceSelected) {
+        throw new AuthApiError(
+            "Couldn’t select that workspace. Please try again.",
+        );
+    }
+}
+
+async function requestAuth<T>(
+    endpoint: "register" | "login" | "logout" | "select-workspace",
+    options: RequestInit,
+): Promise<T> {
     let response: Response;
     try {
-        response = await fetch(
-            `/api/v1/auth/${mode === "signup" ? "register" : "login"}`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                credentials: "same-origin",
-                cache: "no-store",
-                body: JSON.stringify(values),
-            },
-        );
+        const headers = new Headers(options.headers);
+        headers.set("Accept", "application/json");
+        response = await fetch(`/api/v1/auth/${endpoint}`, {
+            ...options,
+            headers,
+            credentials: "same-origin",
+            cache: "no-store",
+        });
     } catch {
         throw new AuthApiError(
             "Nexus couldn’t reach the server. Check your connection and try again.",
@@ -84,4 +118,6 @@ export async function submitAuth(
             failure.error?.requestId,
         );
     }
+
+    return body.data as T;
 }

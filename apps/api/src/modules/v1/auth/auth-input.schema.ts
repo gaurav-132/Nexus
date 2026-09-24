@@ -22,8 +22,7 @@ export const registerSchema = z
     .object({
         workspaceName: z.string().trim().min(2).max(120),
         workspaceSlug,
-        firstName: z.string().trim().min(1).max(80),
-        lastName: z.string().trim().max(80).optional().default(''),
+        name: z.string().trim().min(1).max(160),
         email,
         password: z.string().min(12).max(128),
     })
@@ -31,11 +30,22 @@ export const registerSchema = z
 
 export const loginSchema = z
     .object({
-        workspaceSlug,
         email,
         password: z.string().min(1).max(128),
     })
     .strict();
 
+export const acceptInvitationSchema = z
+    .object({
+        name: z.string().trim().min(1).max(160).optional(),
+        password: z.string().min(12).max(128).optional(),
+    })
+    .strict();
+
+export const selectWorkspaceSchema = z
+    .object({ tenantSlug: workspaceSlug })
+    .strict();
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;

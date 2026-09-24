@@ -16,27 +16,6 @@ export function LoginForm() {
     return (
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <AuthField
-                id="workspaceSlug"
-                label="Workspace URL"
-                error={fieldErrors.workspaceSlug}
-            >
-                <div className="slug-field login-slug">
-                    <span>nexus.app/</span>
-                    <AuthInput
-                        id="workspaceSlug"
-                        name="workspaceSlug"
-                        placeholder="your-workspace"
-                        autoComplete="organization"
-                        maxLength={40}
-                        onChange={() => clearFieldError("workspaceSlug")}
-                    />
-                </div>
-            </AuthField>
-            <p className="field-hint">
-                The address your team chose when setting up Nexus.
-            </p>
-
-            <AuthField
                 id="email"
                 label="Work email"
                 error={fieldErrors.email}
@@ -47,7 +26,7 @@ export function LoginForm() {
                     className="text-input"
                     name="email"
                     type="email"
-                    autoComplete="username"
+                    autoComplete="email"
                     placeholder="you@company.com"
                     maxLength={320}
                     onChange={() => clearFieldError("email")}

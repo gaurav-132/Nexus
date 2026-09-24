@@ -2,14 +2,14 @@ import Link from "next/link";
 
 import { Brand } from "@/components/layout/brand";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
-import { requireCurrentUser } from "@/features/auth/server-auth";
+import type { WorkspaceUser } from "@/features/auth/server-auth";
 
 export default async function WorkspaceLayout({
     children,
-}: Readonly<{ children: React.ReactNode }>) {
-    const user = await requireCurrentUser();
-    const initials =
-        `${user.firstName[0] ?? "N"}${user.lastName?.[0] ?? ""}`.toUpperCase();
+    user,
+}: Readonly<{ children: React.ReactNode; user: WorkspaceUser }>) {
+    const initials = user.name.slice(0, 2).toUpperCase();
+    const membership = user.activeMembership;
 
     return (
         <div className="app-frame">
@@ -20,17 +20,17 @@ export default async function WorkspaceLayout({
                 </div>
                 <div className="app-workspace-switch">
                     <span className="workspace-avatar">
-                        {user.tenant.name[0]?.toUpperCase() ?? "N"}
+                        {membership.tenant.name[0]?.toUpperCase() ?? "N"}
                     </span>
                     <span className="workspace-switch-copy">
-                        <b>{user.tenant.name}</b>
+                        <b>{membership.tenant.name}</b>
                         <small>Workspace</small>
                     </span>
                     <span className="mini-chevron">⌄</span>
                 </div>
                 <div className="app-nav-label">YOUR WORKSPACE</div>
                 <nav className="app-nav" aria-label="Workspace navigation">
-                    <Link className="app-nav-link selected" href="/app">
+                    <Link className="app-nav-link selected" href="/">
                         <span>◫</span>Overview
                     </Link>
                     <span className="app-nav-link disabled">
@@ -52,9 +52,9 @@ export default async function WorkspaceLayout({
                     <span className="user-avatar">{initials}</span>
                     <span className="user-card-copy">
                         <b>
-                            {user.firstName} {user.lastName ?? ""}
+                            {user.name}
                         </b>
-                        <small>{user.role}</small>
+                        <small>{membership.role}</small>
                     </span>
                     <SignOutButton />
                 </div>
@@ -62,7 +62,7 @@ export default async function WorkspaceLayout({
             <div className="app-main-column">
                 <header className="app-topbar">
                     <div className="breadcrumb">
-                        <span>{user.tenant.name}</span>
+                        <span>{membership.tenant.name}</span>
                         <i>/</i>
                         <b>Overview</b>
                     </div>

@@ -31,4 +31,17 @@ describe('web origin configuration', () => {
         expect(isAllowedWebOrigin('http://localhost:3001', origins)).toBe(false);
         expect(isAllowedWebOrigin('null', origins)).toBe(false);
     });
+
+    it('accepts local host aliases in development on the configured port', () => {
+        const origins = getAllowedWebOrigins(
+            config({
+                WEB_ORIGIN: 'http://localhost:3000',
+                NODE_ENV: 'development',
+            }),
+        );
+
+        expect(isAllowedWebOrigin('http://127.0.0.1:3000', origins)).toBe(true);
+        expect(isAllowedWebOrigin('http://[::1]:3000', origins)).toBe(true);
+        expect(isAllowedWebOrigin('http://127.0.0.1:3001', origins)).toBe(false);
+    });
 });

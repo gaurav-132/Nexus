@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { requireCurrentUser } from "@/features/auth/server-auth";
+import type { WorkspaceUser } from "@/features/auth/server-auth";
 
 export const metadata: Metadata = { title: "Workspace" };
 
@@ -12,9 +12,9 @@ function Sparkle() {
     );
 }
 
-export default async function WorkspaceHome() {
-    const user = await requireCurrentUser();
-    const firstName = user.firstName;
+export default function WorkspaceHome({ user }: { user: WorkspaceUser }) {
+    const [firstName] = user.name.split(" ");
+    const membership = user.activeMembership;
     const today = new Intl.DateTimeFormat("en", {
         weekday: "long",
         month: "long",
@@ -32,7 +32,7 @@ export default async function WorkspaceHome() {
                     </h1>
                     <p>
                         This is the shared home for everything happening at{" "}
-                        {user.tenant.name}.
+                        {membership.tenant.name}.
                     </p>
                 </div>
                 <span className="workspace-live">
@@ -48,7 +48,7 @@ export default async function WorkspaceHome() {
                         to move forward.
                     </h2>
                     <p>
-                        You’re the {user.role} of <b>{user.tenant.name}</b>.
+                        You’re the {membership.role} of <b>{membership.tenant.name}</b>.
                         Your workspace is set up and ready to grow with your
                         team.
                     </p>
@@ -134,11 +134,11 @@ export default async function WorkspaceHome() {
                 </div>
                 <div className="detail-cell">
                     <span>WORKSPACE URL</span>
-                    <b>nexus.app/{user.tenant.slug}</b>
+                    <b>nexus.app/{membership.tenant.slug}</b>
                 </div>
                 <div className="detail-cell">
                     <span>YOUR ROLE</span>
-                    <b className="role-badge">{user.role}</b>
+                    <b className="role-badge">{membership.role}</b>
                 </div>
                 <div className="detail-cell">
                     <span>SIGNED IN AS</span>

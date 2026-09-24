@@ -1,37 +1,42 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+
+import { AuthApiError, logout } from "@/features/auth/api/client";
 
 export function SignOutButton() {
     const router = useRouter();
-    const [busy, setBusy] = useState(false);
-
-    async function signOut() {
-        setBusy(true);
-        try {
-            await fetch("/api/v1/auth/logout", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "same-origin",
-                body: "{}",
-            });
-        } finally {
-            router.replace("/login");
+    const logoutMutation = useMutation({
+        mutationFn: logout,
+        onSuccess: () => {
+            router.replace("/");
             router.refresh();
-            setBusy(false);
-        }
-    }
+        },
+    });
+    const errorMessage =
+        logoutMutation.error instanceof AuthApiError
+            ? logoutMutation.error.message
+            : logoutMutation.error
+              ? "Couldn’t sign out. Please try again."
+              : "";
 
     return (
-        <button
-            className="signout-button"
-            type="button"
-            onClick={signOut}
-            disabled={busy}
-        >
-            <span aria-hidden="true">↗</span>
-            {busy ? "Signing out…" : "Sign out"}
-        </button>
+        <div className="signout-control">
+            <button
+                className="signout-button"
+                type="button"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+            >
+                <span aria-hidden="true">↗</span>
+                {logoutMutation.isPending ? "Signing out…" : "Sign out"}
+            </button>
+            {errorMessage && (
+                <span className="signout-error" role="alert">
+                    {errorMessage}
+                </span>
+            )}
+        </div>
     );
 }
