@@ -113,8 +113,7 @@ export class AuthService {
         if (
             !identity ||
             !passwordMatches ||
-            identity.status !== 'active' ||
-            identity.memberships.length === 0
+            identity.status !== 'active'
         ) {
             throw new UnauthorizedException('Email or password is incorrect.');
         }

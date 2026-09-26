@@ -2,7 +2,13 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { AuthFormLoader } from "@/features/auth/components/form-loader";
 
-export function AuthPage({ mode }: { mode: "login" | "signup" }) {
+export function AuthPage({
+    mode,
+    redirectTo,
+}: {
+    mode: "login" | "signup";
+    redirectTo?: string;
+}) {
     const isSignup = mode === "signup";
     return (
         <div className="site-frame auth-page">
@@ -36,7 +42,7 @@ export function AuthPage({ mode }: { mode: "login" | "signup" }) {
                                 : "Sign in to your Nexus workspace and get back in sync."}
                         </p>
                     </div>
-                    <AuthFormLoader mode={mode} />
+                    <AuthFormLoader mode={mode} redirectTo={redirectTo} />
                     <div className="auth-reassurance">
                         <span className="reassurance-icon">✳</span>
                         <span>

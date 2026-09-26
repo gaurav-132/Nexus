@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { Brand } from "@/components/layout/brand";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
-import type { WorkspaceUser } from "@/features/auth/server-auth";
+import {
+    hasPlatformAdminAccess,
+    type WorkspaceUser,
+} from "@/features/auth/server-auth";
 
 export default async function WorkspaceLayout({
     children,
@@ -10,6 +13,7 @@ export default async function WorkspaceLayout({
 }: Readonly<{ children: React.ReactNode; user: WorkspaceUser }>) {
     const initials = user.name.slice(0, 2).toUpperCase();
     const membership = user.activeMembership;
+    const isPlatformAdmin = await hasPlatformAdminAccess();
 
     return (
         <div className="app-frame">
@@ -39,6 +43,11 @@ export default async function WorkspaceLayout({
                     <span className="app-nav-link disabled">
                         <span>♧</span>People <i>SOON</i>
                     </span>
+                    {isPlatformAdmin && (
+                        <Link className="app-nav-link" href="/admin">
+                            <span>⌘</span>Platform admin
+                        </Link>
+                    )}
                 </nav>
                 <div className="sidebar-spacer" />
                 <div className="sidebar-bottom-note">

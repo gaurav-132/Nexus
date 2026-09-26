@@ -23,7 +23,7 @@ PostgreSQL — local development via Docker Compose
 
 The web app owns presentation, navigation, and browser interaction. It calls the API for product data; it must not connect directly to PostgreSQL. Keep feature-specific UI and data access near the feature. Shared client state is added only when a feature needs it. TanStack Query, Zustand, and shadcn/ui are intended choices as those needs arise; they are not all installed or required by the current starter UI.
 
-The frontend follows feature ownership. `app/` contains Next route entry points and global CSS; route files stay thin and compose feature pages. `components/layout/` contains only shared presentation such as the site header, footer, and brand. `features/auth/`, `features/marketing/`, and `features/workspace/` own their UI and behavior. Inside auth, `api/client.ts` owns HTTP and API error parsing, `validation/schemas.ts` owns client validation, `hooks/use-auth-form.ts` owns form submission state and navigation, and `components/` owns the auth screens and controls. Server-only session lookup is in `features/auth/server-auth.ts`. This gives a developer one place to find each feature's UI, API calls, validation, and hooks.
+The frontend follows feature ownership. `app/` contains Next route entry points and global CSS; route files stay thin and compose feature pages. `components/layout/` contains only shared presentation such as the site header, footer, and brand. `features/auth/`, `features/admin/`, `features/marketing/`, and `features/workspace/` own their UI and behavior. Inside auth, `api/client.ts` owns HTTP and API error parsing, `validation/schemas.ts` owns client validation, `hooks/use-auth-form.ts` owns form submission state and navigation, and `components/` owns the auth screens and controls. Server-only session lookup is in `features/auth/server-auth.ts`. Admin screens and tenant management API calls live in `features/admin/`; `/admin/login` reuses the shared auth flow.
 
 The API owns HTTP boundaries, validation, authentication/authorization, business rules, and persistence. V1 currently groups API features under one `V1Module`; its one route prefix is configured globally in `main.ts` as `/api/v1`. Within V1, controllers handle HTTP, services implement use cases, and repositories own Drizzle queries and transactions. Add a feature module only when a real domain boundary warrants one. The API remains a single deployable application.
 
@@ -48,7 +48,9 @@ Nexus/
 │       ├── src/database/            PostgreSQL pool and Drizzle setup
 │       │   └── schema/              tenant, user, and session definitions + barrel
 │       ├── src/common/api-response/ shared response envelope + error filter
-│       ├── src/modules/v1/auth/     auth feature: MVC, validation, context/security
+│       ├── src/modules/v1/auth/     shared identity, credentials, and sessions
+│       ├── src/modules/v1/tenants/  tenant data and workspace rules
+│       ├── src/modules/v1/admin/    platform access and tenant admin use cases
 │       ├── src/modules/v1/v1.module.ts
 │       └── drizzle/                 module-grouped SQL migrations + global journal
 ├── infrastructure/docker-compose.yml
@@ -69,7 +71,9 @@ The normalized domain keeps `users` as the sole identity and credential source. 
 
 Authentication routes are `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`, `/api/v1/auth/logout`, `/api/v1/auth/select-workspace`, and `/api/v1/auth/invitations/:token/accept`. Signup creates the initial workspace owner. Login uses email and password; users with several memberships choose an active workspace after signing in. The API returns successful data inside `{ "success": true, "data": ... }`; errors use `{ "success": false, "error": { "code", "message", "details?", "requestId" } }`. Session tokens are held in an HttpOnly, SameSite=Strict cookie and are never returned in JSON. Passwords are hashed using Node's scrypt implementation. The web app proxies `/api/v1/*` to the API so the browser can use a same-origin session cookie.
 
-There is no standalone tenant API module yet. A tenant currently exists as a database entity created atomically with its owner during signup. Add tenant routes/services inside V1 only when tenant management becomes a product feature; the `tenants` table is defined in the database schema and is not an authentication identity store.
+Platform management uses `GET /api/v1/admin/me`, `GET /api/v1/admin/overview`, `GET /api/v1/admin/tenants`, `GET /api/v1/admin/tenants/:id`, and `PATCH /api/v1/admin/tenants/:id`. The admin grant is held in `platform_admins`, separate from tenant membership roles. The first grant is issued for an existing active user by a trusted operator after migrations are applied.
+
+The `tenants` module is the sole owner of workspace data operations. Admin controllers use its service to manage workspaces rather than defining a second tenant repository. `admin` owns platform access checks and the platform console. Platform admins sign in with the same `users` identity and session system; a `platform_admins` grant controls access separately from workspace membership roles. Bootstrap the first grant only for an existing active account with `pnpm --filter api admin:grant --email <account-email>` after migrations are applied.
 
 The pool is a Nest provider, which is singleton-scoped by default within this API process. It checks connectivity at startup and closes on application shutdown. Every API instance/process has its own pool; this is a per-process lifecycle, not a cross-process singleton.
 

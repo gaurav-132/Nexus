@@ -22,6 +22,13 @@
       "when": 1790288685261,
       "tag": "auth/0002_normalize_identity_memberships",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790290660342,
+      "tag": "admin/0003_platform_admins",
+      "breakpoints": true
     }
   ]
 }
