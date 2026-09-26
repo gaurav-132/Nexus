@@ -41,3 +41,19 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
         return null;
     }
 }
+
+export async function hasPlatformAdminAccess(): Promise<boolean> {
+    const sessionToken = (await cookies()).get("nexus_session")?.value;
+    if (!sessionToken) return false;
+
+    const apiOrigin = process.env.API_SERVER_URL ?? "http://localhost:3001";
+    try {
+        const response = await fetch(`${apiOrigin}/api/v1/admin/me`, {
+            headers: { Cookie: `nexus_session=${sessionToken}` },
+            cache: "no-store",
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
+}

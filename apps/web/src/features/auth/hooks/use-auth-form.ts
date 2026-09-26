@@ -12,7 +12,7 @@ import {
     type AuthValues,
 } from "@/features/auth/validation/schemas";
 
-export function useAuthForm(mode: AuthMode) {
+export function useAuthForm(mode: AuthMode, redirectTo = "/") {
     const router = useRouter();
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
@@ -38,7 +38,7 @@ export function useAuthForm(mode: AuthMode) {
 
         try {
             await authMutation.mutateAsync(validation.values);
-            router.replace("/");
+            router.replace(redirectTo);
             router.refresh();
         } catch (error) {
             if (error instanceof AuthApiError) {

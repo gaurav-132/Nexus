@@ -31,6 +31,16 @@ const SignupForm = dynamic(
     },
 );
 
-export function AuthFormLoader({ mode }: { mode: "login" | "signup" }) {
-    return mode === "signup" ? <SignupForm /> : <LoginForm />;
+export function AuthFormLoader({
+    mode,
+    redirectTo,
+}: {
+    mode: "login" | "signup";
+    redirectTo?: string;
+}) {
+    return mode === "signup" ? (
+        <SignupForm />
+    ) : (
+        <LoginForm redirectTo={redirectTo} />
+    );
 }

@@ -47,6 +47,12 @@ export function WorkspaceSelector({ user }: { user: CurrentUser }) {
                     </button>
                 ))}
             </div>
+            {user.memberships.length === 0 && (
+                <p className="workspace-picker-status">
+                    This account does not currently belong to a workspace.
+                    Contact your workspace owner for an invitation.
+                </p>
+            )}
             {selection.isPending && (
                 <p className="workspace-picker-status" role="status">
                     Opening workspace…

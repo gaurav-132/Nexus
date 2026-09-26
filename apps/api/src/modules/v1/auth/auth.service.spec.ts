@@ -113,6 +113,36 @@ describe('AuthService', () => {
         expect(result.user.memberships).toHaveLength(2);
     });
 
+    it('allows a platform operator account without workspace memberships to sign in', async () => {
+        const passwordHash = await hashPassword('correct horse battery staple');
+        const repository = {
+            findCredentials: vi.fn(async () => ({
+                id: 'operator-1',
+                email: 'operator@example.com',
+                name: 'Platform Operator',
+                passwordHash,
+                status: 'active' as const,
+                memberships: [],
+            })),
+            createSession: vi.fn(),
+        };
+        const service = new AuthService(repository as never);
+
+        const result = await service.login({
+            email: 'operator@example.com',
+            password: 'correct horse battery staple',
+        });
+
+        expect(repository.createSession).toHaveBeenCalledWith(
+            'operator-1',
+            null,
+            expect.any(String),
+            expect.any(Date),
+        );
+        expect(result.user.memberships).toEqual([]);
+        expect(result.user.activeMembership).toBeNull();
+    });
+
     it('rejects invalid passwords without creating a session', async () => {
         const passwordHash = await hashPassword('correct horse battery staple');
         const repository = {

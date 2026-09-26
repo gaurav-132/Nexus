@@ -9,9 +9,9 @@ import {
 } from "@/features/auth/components/form-controls";
 import { useAuthForm } from "@/features/auth/hooks/use-auth-form";
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
     const { busy, formError, fieldErrors, handleSubmit, clearFieldError } =
-        useAuthForm("login");
+        useAuthForm("login", redirectTo);
 
     return (
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
